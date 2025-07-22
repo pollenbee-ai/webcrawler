@@ -1,0 +1,9 @@
+admission_requirements: ["transcript", "recommendation", "letter of recommendation", "gpa", "statement of purpose", "sop", "ielts", "toefl", "gre", "gmat", "prerequisite", "english proficiency", "credits", "minimum score", "score requirement", "academic background", "academic requirements", "qualification", "language test", "entrance exam", "eligibility", "work experience", "writing sample", "portfolio", "interview", "resume", "cv", "criminal record", "age 18+", "extenuating circumstances"]
+
+scholarships: ["scholarship", "scholarships", "fellowship", "fellowships", "grant", "grants", "financial aid", "bursary", "stipend", "fee waiver", "tuition fee support", "fully funded", "partial funding", "funding", "sponsored program", "assistantship", "merit-based", "need-based", "research grant", "award", "studentship", "financial support"]
+
+programs_courses: ["curriculum", "major", "majors", "degree", "degrees", "bachelor", "master", "phd", "undergraduate", "postgraduate", "doctoral", "msc", "bsc", "mba", "engineering", "science", "arts", "law", "medicine", "business", "technology", "computer science", "cybersecurity", "data science", "artificial intelligence", "civil engineering", "mechanical"]
+
+deadlines: ["apply by", "submit by", "close on", "deadline", "last date", "submission date", "closing date", "application deadline", "final date", "admission cycle", "intake", "early decision", "regular decision", "fall intake", "spring intake", "start date", "enrollment deadline", "due date", "timeline", "schedule", "calendar", "date of submission", "apply by", "priority deadline"]
+
+unknown: []

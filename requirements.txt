@@ -1,0 +1,12 @@
+Flask==2.3.3
+requests==2.31.0
+beautifulsoup4==4.12.3
+urllib3==2.2.1
+spacy==3.7.2
+markdownify==0.11.6
+python-dateutil==2.9.0.post0
+sqlalchemy==2.0.30
+PyYAML==6.0.1
+nltk==3.8.1
+markdown==3.6
+pycountry==23.12.11
