@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iCARE Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom styles -->
+    <style>
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        .table-container {
+            display: none;
+        }
+        .table-container.active {
+            display: block;
+        }
+        .table-scroll {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .table th.sortable {
+            cursor: pointer;
+            position: relative;
+        }
+        .table th.sortable::after {
+            content: '\f0dc';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            margin-left: 5px;
+            color: #6c757d;
+            font-size: 0.8em;
+        }
+        .table th.sortable.asc::after {
+            content: '\f0de';
+        }
+        .table th.sortable.desc::after {
+            content: '\f0dd';
+        }
+        .export-btn {
+            margin-right: 10px;
+        }
+        .search-box {
+            max-width: 300px;
+        }
+        .pagination-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .pagination-btn {
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .pagination-btn:hover:not(:disabled) {
+            background-color: #f5f5f5;
+        }
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .sidebar {
+            min-height: 100vh;
+            width: 250px;
+            background-color: #343a40;
+            position: fixed;
+            top: 0;
+            left: 0;
+            transition: transform 0.3s ease-in-out;
+            z-index: 1000;
+        }
+        .sidebar.hidden {
+            transform: translateX(-250px);
+        }
+        .main-content {
+            margin-left: 250px;
+            transition: margin-left 0.3s ease-in-out;
+        }
+        .sidebar.hidden + .main-content {
+            margin-left: 0;
+        }
+        @media (max-width: 767.98px) {
+            .sidebar {
+                transform: translateX(-250px);
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .sidebar.show + .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="d-flex">
+    <!-- Sidebar -->
+    <div class="bg-dark text-white p-3 sidebar" id="sidebar">
+        <a href="/" class="text-white text-decoration-none">
+            <h4 class="mb-4">KTP – iCARE Platform</h4>
+        </a>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a href="/" class="nav-link text-white active">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main content -->
+    <div class="flex-grow-1 main-content" id="main-content">
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container-fluid">
+                <button class="btn btn-dark me-2" id="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/">Home</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/logout">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Content -->
+        <div class="container-fluid p-4">
+            <h1 class="mb-4">Financial Aid Dashboard</h1>
+            <div class="card">
+                <div class="card-body">
+                    <h3>Select Category</h3>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="category" id="admission_requirements" value="admission_requirements" checked onclick="showTable('admission_requirements')">
+                        <label class="form-check-label" for="admission_requirements">Application Requirements</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="category" id="application_process" value="application_process" onclick="showTable('application_process')">
+                        <label class="form-check-label" for="application_process">Application Process</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="category" id="deadlines" value="deadlines" onclick="showTable('deadlines')">
+                        <label class="form-check-label" for="deadlines">Deadlines</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="category" id="scholarships" value="scholarships" onclick="showTable('scholarships')">
+                        <label class="form-check-label" for="scholarships">Scholarships</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Application Requirements Table -->
+            <div class="table-container active" id="admission_requirements-table">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h3 class="card-title">Application Requirements</h3>
+                        <div class="d-flex align-items-center">
+                            <button class="btn btn-sm btn-primary export-btn" onclick="exportTableToCSV('admission_requirements', 'application_requirements.csv')">Export to CSV</button>
+                            <div class="input-group input-group-sm search-box">
+                                <input type="text" class="form-control" placeholder="Search..." id="search-admission_requirements" onkeyup="filterTable('admission_requirements')">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body table-responsive p-0">
+                        <div class="table-scroll">
+                            <table class="table table-hover" id="requirements-table">
+                                <thead>
+                                    <tr>
+                                        <th class="sortable" onclick="sortTable('admission_requirements', 0)">University</th>
+                                        <th class="sortable" onclick="sortTable('admission_requirements', 1)">Heading</th>
+                                        <th class="sortable" onclick="sortTable('admission_requirements', 2)">Degree</th>
+                                        <th class="sortable" onclick="sortTable('admission_requirements', 3)">Year</th>
+                                        <th class="sortable" onclick="sortTable('admission_requirements', 4)">Requirement Type</th>
+                                        <th class="sortable" onclick="sortTable('admission_requirements', 5)">Requirement Value</th>
+                                        <th class="sortable" onclick="sortTable('admission_requirements', 6)">Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admission_requirements-tbody"></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-container" id="admission_requirements-pagination">
+                            <button class="pagination-btn" id="admission_requirements-first-btn">⏮ First</button>
+                            <button class="pagination-btn" id="admission_requirements-prev-btn">◀ Prev</button>
+                            Page <input type="number" id="admission_requirements-page-input" min="1" value="1" style="width: 60px;" />
+                            of <span id="admission_requirements-total-pages">1</span>
+                            <button class="pagination-btn" id="admission_requirements-next-btn">Next ▶</button>
+                            <button class="pagination-btn" id="admission_requirements-last-btn">Last ⏭</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Application Process Table -->
+            <div class="table-container" id="application_process-table">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h3 class="card-title">Application Process</h3>
+                        <div class="d-flex align-items-center">
+                            <button class="btn btn-sm btn-primary export-btn" onclick="exportTableToCSV('application_process', 'application_process.csv')">Export to CSV</button>
+                            <div class="input-group input-group-sm search-box">
+                                <input type="text" class="form-control" placeholder="Search..." id="search-application_process" onkeyup="filterTable('application_process')">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body table-responsive p-0">
+                        <div class="table-scroll">
+                            <table class="table table-hover" id="application_process-table">
+                                <thead>
+                                    <tr>
+                                        <th class="sortable" onclick="sortTable('application_process', 0)">University</th>
+                                        <th class="sortable" onclick="sortTable('application_process', 1)">Heading</th>
+                                        <th class="sortable" onclick="sortTable('application_process', 2)">Faculty</th>
+                                        <th class="sortable" onclick="sortTable('application_process', 3)">Degree</th>
+                                        <th class="sortable" onclick="sortTable('application_process', 4)">Program Name</th>
+                                        <th class="sortable" onclick="sortTable('application_process', 5)">Duration</th>
+                                        <th class="sortable" onclick="sortTable('application_process', 6)">Courses List</th>
+                                        <th class="sortable" onclick="sortTable('application_process', 7)">Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="application_process-tbody"></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-container" id="application_process-pagination">
+                            <button class="pagination-btn" id="application_process-first-btn">⏮ First</button>
+                            <button class="pagination-btn" id="application_process-prev-btn">◀ Prev</button>
+                            Page <input type="number" id="application_process-page-input" min="1" value="1" style="width: 60px;" />
+                            of <span id="application_process-total-pages">1</span>
+                            <button class="pagination-btn" id="application_process-next-btn">Next ▶</button>
+                            <button class="pagination-btn" id="application_process-last-btn">Last ⏭</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deadlines Table -->
+            <div class="table-container" id="deadlines-table">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h3 class="card-title">Deadlines</h3>
+                        <div class="d-flex align-items-center">
+                            <button class="btn btn-sm btn-primary export-btn" onclick="exportTableToCSV('deadlines', 'deadlines.csv')">Export to CSV</button>
+                            <div class="input-group input-group-sm search-box">
+                                <input type="text" class="form-control" placeholder="Search..." id="search-deadlines" onkeyup="filterTable('deadlines')">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body table-responsive p-0">
+                        <div class="table-scroll">
+                            <table class="table table-hover" id="deadlines-table">
+                                <thead>
+                                    <tr>
+                                        <th class="sortable" onclick="sortTable('deadlines', 0)">University</th>
+                                        <th class="sortable" onclick="sortTable('deadlines', 1)">Heading</th>
+                                        <th class="sortable" onclick="sortTable('deadlines', 2)">Degree</th>
+                                        <th class="sortable" onclick="sortTable('deadlines', 3)">Year</th>
+                                        <th class="sortable" onclick="sortTable('deadlines', 4)">Deadline Type</th>
+                                        <th class="sortable" onclick="sortTable('deadlines', 5)">Deadline Date</th>
+                                        <th class="sortable" onclick="sortTable('deadlines', 6)">Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="deadlines-tbody"></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-container" id="deadlines-pagination">
+                            <button class="pagination-btn" id="deadlines-first-btn">⏮ First</button>
+                            <button class="pagination-btn" id="deadlines-prev-btn">◀ Prev</button>
+                            Page <input type="number" id="deadlines-page-input" min="1" value="1" style="width: 60px;" />
+                            of <span id="deadlines-total-pages">1</span>
+                            <button class="pagination-btn" id="deadlines-next-btn">Next ▶</button>
+                            <button class="pagination-btn" id="deadlines-last-btn">Last ⏭</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scholarships Table -->
+            <div class="table-container" id="scholarships-table">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h3 class="card-title">Scholarships</h3>
+                        <div class="d-flex align-items-center">
+                            <button class="btn btn-sm btn-primary export-btn" onclick="exportTableToCSV('scholarships', 'scholarships.csv')">Export to CSV</button>
+                            <div class="input-group input-group-sm search-box">
+                                <input type="text" class="form-control" placeholder="Search..." id="search-scholarships" onkeyup="filterTable('scholarships')">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body table-responsive p-0">
+                        <div class="table-scroll">
+                            <table class="table table-hover" id="scholarships-table">
+                                <thead>
+                                    <tr>
+                                        <th class="sortable" onclick="sortTable('scholarships', 0)">University</th>
+                                        <th class="sortable" onclick="sortTable('scholarships', 1)">Heading</th>
+                                        <th class="sortable" onclick="sortTable('scholarships', 2)">Scholarship Name</th>
+                                        <th class="sortable" onclick="sortTable('scholarships', 3)">Degree</th>
+                                        <th class="sortable" onclick="sortTable('scholarships', 4)">Amount</th>
+                                        <th class="sortable" onclick="sortTable('scholarships', 5)">Eligibility</th>
+                                        <th class="sortable" onclick="sortTable('scholarships', 6)">Application Deadline</th>
+                                        <th class="sortable" onclick="sortTable('scholarships', 7)">Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="scholarships-tbody"></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-container" id="scholarships-pagination">
+                            <button class="pagination-btn" id="scholarships-first-btn">⏮ First</button>
+                            <button class="pagination-btn" id="scholarships-prev-btn">◀ Prev</button>
+                            Page <input type="number" id="scholarships-page-input" min="1" value="1" style="width: 60px;" />
+                            of <span id="scholarships-total-pages">1</span>
+                            <button class="pagination-btn" id="scholarships-next-btn">Next ▶</button>
+                            <button class="pagination-btn" id="scholarships-last-btn">Last ⏭</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="bg-light text-center py-3 mt-4">
+            <div class="container">
+                <div class="float-end">
+                    KTP – iCARE Platform
+                </div>
+                <strong>Copyright © 2025 Boost Education Service.</strong> All rights reserved.
+            </div>
+        </footer>
+    </div>
+</div>
+
+<!-- jQuery -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<!-- Bootstrap 5 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Sidebar toggle
+    document.getElementById('sidebar-toggle').addEventListener('click', () => {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('hidden');
+        if (window.innerWidth <= 767.98) {
+            sidebar.classList.toggle('show');
+        }
+    });
+
+    // Cache and state management
+    const dataCache = {};
+    const tableState = {
+        'deadlines': { page: 1, rowsPerPage: 10, sortCol: null, sortAsc: true, filter: '', totalPages: 1 },
+        'scholarships': { page: 1, rowsPerPage: 10, sortCol: null, sortAsc: true, filter: '', totalPages: 1 },
+        'admission_requirements': { page: 1, rowsPerPage: 10, sortCol: null, sortAsc: true, filter: '', totalPages: 1 },
+        'application_process': { page: 1, rowsPerPage: 10, sortCol: null, sortAsc: true, filter: '', totalPages: 1 }
+    };
+
+    // Column mappings for each category, aligned with dataclass
+    const columnMap = {
+        'admission_requirements': ['university_name', 'heading', 'degree', 'year', 'requirement_type', 'requirement_value', 'notes'],
+        'application_process': ['university_name', 'heading', 'faculty', 'degree', 'program_name', 'duration', 'courses_list', 'notes'],
+        'deadlines': ['university_name', 'heading', 'degree', 'year', 'deadline_type', 'deadline_date', 'notes'],
+        'scholarships': ['university_name', 'heading', 'scholarship_name', 'degree', 'amount', 'eligibility', 'application_deadline', 'notes']
+    };
+
+    // Alternative column mappings for common variations
+    const columnFallbacks = {
+        'university_name': ['university', 'University', 'institution', 'Institution', 'uni', 'school']
+    };
+
+    // Setup pagination controls
+    function setupPaginationControls(category) {
+        console.log(`Setting up pagination controls for ${category}`);
+        const firstBtn = document.getElementById(`${category}-first-btn`);
+        const prevBtn = document.getElementById(`${category}-prev-btn`);
+        const nextBtn = document.getElementById(`${category}-next-btn`);
+        const lastBtn = document.getElementById(`${category}-last-btn`);
+        const pageInput = document.getElementById(`${category}-page-input`);
+
+        if (!firstBtn || !prevBtn || !nextBtn || !lastBtn || !pageInput) {
+            console.error(`Pagination elements missing for ${category}`);
+            return;
+        }
+
+        firstBtn.onclick = () => {
+            console.log(`Clicked First button for ${category}`);
+            changePage(category, 1);
+        };
+        prevBtn.onclick = () => {
+            console.log(`Clicked Prev button for ${category}, current page: ${tableState[category].page}`);
+            changePage(category, tableState[category].page - 1);
+        };
+        nextBtn.onclick = () => {
+            console.log(`Clicked Next button for ${category}, current page: ${tableState[category].page}`);
+            changePage(category, tableState[category].page + 1);
+        };
+        lastBtn.onclick = () => {
+            console.log(`Clicked Last button for ${category}, total pages: ${tableState[category].totalPages}`);
+            changePage(category, tableState[category].totalPages);
+        };
+        pageInput.onchange = (e) => {
+            const newPage = parseInt(e.target.value);
+            console.log(`Page input changed for ${category} to ${newPage}`);
+            changePage(category, newPage);
+        };
+    }
+
+    // Show selected table
+    function showTable(category) {
+        console.log(`Showing table for ${category}`);
+        document.querySelectorAll('.table-container').forEach(table => table.classList.remove('active'));
+        document.getElementById(`${category}-table`).classList.add('active');
+        tableState[category].page = 1;
+        tableState[category].filter = '';
+        document.getElementById(`search-${category}`).value = '';
+        fetchTableData(category);
+    }
+
+    // Fetch table data from backend
+    function fetchTableData(category) {
+        const tbodyId = `${category}-tbody`;
+        if (dataCache[category]) {
+            console.log(`Using cached data for ${category}, length: ${dataCache[category].length}`);
+            renderTable(category, dataCache[category]);
+        } else {
+            $.ajax({
+                url: `/data/${category}`,
+                method: 'GET',
+                beforeSend: () => $(`#${tbodyId}`).html(`<tr><td colspan="${columnMap[category].length}" class="text-center">Loading...</td></tr>`),
+                success: function(data) {
+                    if (!Array.isArray(data)) {
+                        console.error(`Expected array for ${category}, received:`, data);
+                        $(`#${tbodyId}`).html(`<tr><td colspan="${columnMap[category].length}" class="text-center">Invalid data format</td></tr>`);
+                        return;
+                    }
+                    // Check for university_name key in first row
+                    if (data.length > 0) {
+                        const sampleRow = data[0];
+                        const universityKey = columnMap[category][0];
+                        const fallbackKeys = columnFallbacks[universityKey] || [];
+                        let foundKey = universityKey;
+                        if (!(universityKey in sampleRow)) {
+                            foundKey = fallbackKeys.find(key => key in sampleRow);
+                            if (foundKey) {
+                                console.warn(`University key '${universityKey}' not found in data for ${category}. Using fallback key '${foundKey}'.`);
+                                columnMap[category][0] = foundKey;
+                            } else {
+                                console.warn(`University key '${universityKey}' or fallbacks not found in data for ${category}. Sample row:`, sampleRow);
+                            }
+                        } else {
+                            console.log(`Using key '${universityKey}' for University column in ${category}. Sample row:`, sampleRow);
+                        }
+                    } else {
+                        console.warn(`No data rows for ${category}`);
+                    }
+                    dataCache[category] = data;
+                    renderTable(category, data);
+                },
+                error: function(xhr) {
+                    if (xhr.status === 401) {
+                        window.location.href = '/login';
+                    } else {
+                        console.error(`Error fetching data for ${category}:`, xhr.status, xhr.statusText, xhr.responseText);
+                        $(`#${tbodyId}`).html(`<tr><td colspan="${columnMap[category].length}" class="text-center">Error loading data</td></tr>`);
+                    }
+                }
+            });
+        }
+    }
+
+    // Render table with pagination
+    function renderTable(category, data) {
+        const tbodyId = `${category}-tbody`;
+        const tbody = document.getElementById(tbodyId);
+        const columns = columnMap[category];
+        const state = tableState[category];
+
+        // Validate data
+        if (!Array.isArray(data)) {
+            console.error(`Invalid data for ${category}:`, data);
+            tbody.innerHTML = `<tr><td colspan="${columns.length}" class="text-center">Invalid data format</td></tr>`;
+            return;
+        }
+
+        // Apply filtering
+        let filteredData = data.filter(row => row && typeof row === 'object');
+        if (state.filter) {
+            const filter = state.filter.toLowerCase();
+            filteredData = filteredData.filter(row =>
+                columns.some(col => row[col]?.toString().toLowerCase().includes(filter))
+            );
+        }
+
+        // Apply sorting
+        if (state.sortCol !== null) {
+            filteredData = [...filteredData].sort((a, b) => {
+                const valA = a[columns[state.sortCol]] || '';
+                const valB = b[columns[state.sortCol]] || '';
+                if (state.sortAsc) {
+                    return valA.toString().localeCompare(valB.toString(), undefined, { numeric: true, sensitivity: 'base' });
+                } else {
+                    return valB.toString().localeCompare(valA.toString(), undefined, { numeric: true, sensitivity: 'base' });
+                }
+            });
+        }
+
+        // Calculate pagination
+        state.totalPages = Math.max(1, Math.ceil(filteredData.length / state.rowsPerPage));
+        if (state.page > state.totalPages) state.page = state.totalPages;
+        if (state.page < 1) state.page = 1;
+        const start = (state.page - 1) * state.rowsPerPage;
+        const end = start + state.rowsPerPage;
+        const paginatedData = filteredData.slice(start, end);
+
+        console.log(`Rendering ${category} table: page=${state.page}, totalPages=${state.totalPages}, filteredData.length=${filteredData.length}, paginatedData.length=${paginatedData.length}`);
+
+        // Render table
+        tbody.innerHTML = '';
+        if (paginatedData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="${columns.length}" class="text-center">No data available</td></tr>`;
+            return;
+        }
+
+        paginatedData.forEach((item, index) => {
+            if (!item || typeof item !== 'object') {
+                console.warn(`Invalid row at index ${index} for ${category}:`, item);
+                return;
+            }
+            const row = document.createElement('tr');
+            columns.forEach(col => {
+                const cell = document.createElement('td');
+                cell.textContent = item[col] ?? '';
+                row.appendChild(cell);
+            });
+            tbody.appendChild(row);
+        });
+
+        renderPaginationControls(category, filteredData.length);
+    }
+
+    // Render pagination controls
+    function renderPaginationControls(category, totalItems) {
+        const state = tableState[category];
+        state.totalPages = Math.max(1, Math.ceil(totalItems / state.rowsPerPage));
+        if (state.page > state.totalPages) state.page = state.totalPages;
+        if (state.page < 1) state.page = 1;
+
+        const pageInput = document.getElementById(`${category}-page-input`);
+        const totalPagesSpan = document.getElementById(`${category}-total-pages`);
+        const firstBtn = document.getElementById(`${category}-first-btn`);
+        const prevBtn = document.getElementById(`${category}-prev-btn`);
+        const nextBtn = document.getElementById(`${category}-next-btn`);
+        const lastBtn = document.getElementById(`${category}-last-btn`);
+
+        if (!pageInput || !totalPagesSpan || !firstBtn || !prevBtn || !nextBtn || !lastBtn) {
+            console.error(`Pagination elements missing for ${category}`);
+            return;
+        }
+
+        pageInput.value = state.page;
+        totalPagesSpan.textContent = state.totalPages;
+
+        firstBtn.disabled = state.page === 1;
+        prevBtn.disabled = state.page === 1;
+        nextBtn.disabled = state.page === state.totalPages;
+        lastBtn.disabled = state.page === state.totalPages;
+
+        console.log(`Updated pagination for ${category}: page=${state.page}, totalPages=${state.totalPages}, disabled={first:${firstBtn.disabled}, prev:${prevBtn.disabled}, next:${nextBtn.disabled}, last:${lastBtn.disabled}}`);
+    }
+
+    // Change page
+    function changePage(category, newPage) {
+        const state = tableState[category];
+        console.log(`Changing page for ${category} to ${newPage}, current totalPages: ${state.totalPages}`);
+        if (newPage < 1) newPage = 1;
+        if (newPage > state.totalPages) newPage = state.totalPages;
+        state.page = newPage;
+        renderTable(category, dataCache[category] || []);
+    }
+
+    // Filter table
+    function filterTable(category) {
+        const searchInput = document.getElementById(`search-${category}`);
+        tableState[category].filter = searchInput.value;
+        tableState[category].page = 1;
+        console.log(`Filtering ${category} with query: ${tableState[category].filter}`);
+        renderTable(category, dataCache[category] || []);
+    }
+
+    // Sort table
+    function sortTable(category, colIndex) {
+        const state = tableState[category];
+        if (state.sortCol === colIndex) {
+            state.sortAsc = !state.sortAsc;
+        } else {
+            state.sortCol = colIndex;
+            state.sortAsc = true;
+        }
+
+        const tableId = category === 'admission_requirements' ? 'requirements-table' : `${category}-table`;
+        const headers = document.querySelectorAll(`#${tableId} th.sortable`);
+        headers.forEach(h => h.classList.remove('asc', 'desc'));
+        headers[colIndex].classList.add(state.sortAsc ? 'asc' : 'desc');
+
+        console.log(`Sorting ${category} by column ${colIndex}, ascending: ${state.sortAsc}`);
+        renderTable(category, dataCache[category] || []);
+    }
+
+    // Export table to CSV
+    function exportTableToCSV(category, filename) {
+        const data = dataCache[category] || [];
+        const columns = columnMap[category];
+
+        if (!data.length) {
+            console.error(`No data available to export for ${category}`);
+            alert('No data available to export.');
+            return;
+        }
+
+        let csv = columns.map(col => `"${col.replace(/"/g, '""')}"`).join(',');
+        csv += '\n';
+
+        data.forEach(item => {
+            if (!item || typeof item !== 'object') return;
+            const row = columns.map(col => {
+                const value = item[col] ?? '';
+                return `"${value.toString().replace(/"/g, '""')}"`;
+            }).join(',');
+            csv += row + '\n';
+        });
+
+        const csvContent = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+        const link = document.createElement('a');
+        link.setAttribute('href', csvContent);
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        console.log(`Exported CSV for ${category}: ${filename}`);
+    }
+
+    // Initialize
+    $(document).ready(function() {
+        ['admission_requirements', 'application_process', 'deadlines', 'scholarships'].forEach(category => {
+            setupPaginationControls(category);
+        });
+        fetchTableData('admission_requirements');
+    });
+</script>
+</body>
+</html>
